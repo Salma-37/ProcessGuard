@@ -158,6 +158,17 @@ UTILISATION
     Exécution dans un sous-shell isolé
 
 
+            * CODES DES ERREURS *
+
+110 : paramètre(s) manquant(s)
+111 : format invalide
+112 : permission requise
+113 : command non trouvée
+114 : opération échouée
+115 : option invalide
+1 : erreur générale
+
+
             * EXEMPLES *
 
 ./processguard.sh --list
