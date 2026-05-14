@@ -36,10 +36,15 @@ parse_options() {
         fi
     done
 
-    if [[ $OPTIONS_COUNT -gt 1 ]]; then
-        echo "ERROR: une seule option principale est autorisée par exécution" >&2
-        exit 1
+    # MODE (fork/thread/subshell)
+    MODE="normal"
+
+    if [[ "$OPTION" == -f || "$OPTION" == -t || "$OPTION" == -s ]]; then
+        MODE="$OPTION"
     fi
+
+    ACTION="${PARAMS[0]}"
+    PARAMS=("${PARAMS[@]:1}")
 }
 
 check_permissions() {
