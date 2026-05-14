@@ -12,39 +12,38 @@ PARAMS=()
 OPTION=""
 
 parse_options() {
-    # Vérifier qu'au moins une option est donnée
+
     if [[ $# -lt 1 ]]; then
-        echo "ERROR: aucune option fournie. Utilisez --help pour obtenir de l'aide."
-        exit 1
+        handle_error "Aucune option fournie. Utilisez --help" 101
     fi
 
+    MODE="normal"
+    OPTION=""
+    PARAMS=()
+    ACTION=""
+    
+    case "$1" in
+        -f|-t|-s)
+            MODE="$1"
+            shift
+            ;;
+    esac
+
     OPTION="$1"
+
+    if [[ -z "$OPTION" ]]; then
+        handle_error "Aucune action fournie. Utilisez --help" 101
+    fi
+
+    if [[ "$OPTION" != -* ]]; then
+        handle_error "Option invalide : '$OPTION'" 115
+    fi
+
     shift
 
     PARAMS=("$@")
-    
-    if [[ "$OPTION" != -* ]]; then
-        echo "ERROR: option invalide — toute option doit commencer par '-' ou '--'" >&2
-        exit 1
-    fi
 
-    # Vérifier s'il y a trop d'options (cas interdit)
-    OPTIONS_COUNT=0
-    for arg in "$OPTION" "$@"; do
-        if [[ "$arg" == -* ]]; then
-            ((OPTIONS_COUNT++))
-        fi
-    done
-
-    # MODE (fork/thread/subshell)
-    MODE="normal"
-
-    if [[ "$OPTION" == -f || "$OPTION" == -t || "$OPTION" == -s ]]; then
-        MODE="$OPTION"
-    fi
-
-    ACTION="${PARAMS[0]}"
-    PARAMS=("${PARAMS[@]:1}")
+    ACTION="$OPTION"
 }
 
 check_permissions() {
