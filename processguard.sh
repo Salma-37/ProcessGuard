@@ -195,9 +195,15 @@ handle_fork() {
 
 handle_thread() {
 
-    log_info "Execution en mode thread (background)..."
-    dispatch_action &
-    wait
+    log_info "Execution en mode thread C..."
+
+    ./bin/thread_manager "$OPTION" "${PARAMS[@]}"
+
+    local status=$?
+
+    if [[ $status -ne 0 ]]; then
+        handle_error "Erreur thread manager" "$status"
+    fi
 }
 
 handle_subshell() {
