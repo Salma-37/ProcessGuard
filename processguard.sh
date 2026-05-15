@@ -12,33 +12,55 @@ PARAMS=()
 OPTION=""
 
 parse_options() {
-    # Vérifier qu'au moins une option est donnée
+
     if [[ $# -lt 1 ]]; then
-        echo "ERROR: aucune option fournie. Utilisez --help pour obtenir de l'aide."
-        exit 1
+        handle_error "Aucune option fournie. Utilisez --help." 110
+    fi
+
+    case "$1" in
+
+        -f)
+            MODE="fork"
+            shift
+            ;;
+
+        -t)
+            MODE="thread"
+            shift
+            ;;
+
+        -s)
+            MODE="subshell"
+            shift
+            ;;
+
+    esac
+
+    if [[ $# -lt 1 ]]; then
+        handle_error "Aucune action fournie après le mode." 110
     fi
 
     OPTION="$1"
     shift
 
     PARAMS=("$@")
-    
-    if [[ "$OPTION" != -* ]]; then
-        echo "ERROR: option invalide — toute option doit commencer par '-' ou '--'" >&2
-        exit 1
+
+    if [[ "$OPTION" != --* && "$OPTION" != -* ]]; then
+        handle_error "Option invalide : $OPTION" 115
     fi
 
-    # Vérifier s'il y a trop d'options (cas interdit)
-    OPTIONS_COUNT=0
-    for arg in "$OPTION" "$@"; do
-        if [[ "$arg" == -* ]]; then
-            ((OPTIONS_COUNT++))
+    ACTION_COUNT=0
+
+    for arg in "$OPTION" "${PARAMS[@]}"; do
+
+        if [[ "$arg" == --* ]]; then
+            ((ACTION_COUNT++))
         fi
+
     done
 
-    if [[ $OPTIONS_COUNT -gt 1 ]]; then
-        echo "ERROR: une seule option principale est autorisée par exécution" >&2
-        exit 1
+    if [[ $ACTION_COUNT -gt 1 ]]; then
+        handle_error "Une seule action est autorisée." 115
     fi
 }
 
@@ -158,17 +180,6 @@ UTILISATION
     Exécution dans un sous-shell isolé
 
 
-            * CODES DES ERREURS *
-
-110 : paramètre(s) manquant(s)
-111 : format invalide
-112 : permission requise
-113 : command non trouvée
-114 : opération échouée
-115 : option invalide
-1 : erreur générale
-
-
             * EXEMPLES *
 
 ./processguard.sh --list
@@ -217,14 +228,14 @@ handle_subshell() {
 
 execute_with_mode() {
 
-    case "$OPTION" in
-        -f)
+    case "$MODE" in
+        fork)
             handle_fork
             ;;
-        -t)
+        thread)
             handle_thread
             ;;
-        -s)
+        subshell)
             handle_subshell
             ;;
         *)
@@ -387,23 +398,6 @@ dispatch_action() {
 
         # ---- Modes d'exécution ----
 
-        -f)
-            OPTION="${PARAMS[0]}"
-            PARAMS=("${PARAMS[@]:1}")
-            handle_fork
-            ;;
-
-        -t)
-            OPTION="${PARAMS[0]}"
-            PARAMS=("${PARAMS[@]:1}")
-            handle_thread
-            ;;
-
-        -s)
-            OPTION="${PARAMS[0]}"
-            PARAMS=("${PARAMS[@]:1}")
-            handle_subshell
-            ;;
 
         # ---- Autres ----
 
@@ -432,6 +426,8 @@ main() {
     log_info "ProcessGuard démarré — option: $OPTION | params: ${PARAMS[*]}"
 
     check_permissions
+
+    execute_with_mode
 
     dispatch_action
 }
